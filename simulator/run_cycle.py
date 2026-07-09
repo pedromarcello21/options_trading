@@ -55,6 +55,7 @@ def cmd_mark(args) -> int:
     pf = pf_mod.load()
     notes = pf_mod.mark_to_market(pf)
     pf_mod.save(pf)
+    pf_mod.log_equity_snapshot(pf)
     for n in notes:
         print(f"  · {n}")
     _print_report(pf)
@@ -73,6 +74,7 @@ def cmd_trade(args) -> int:
         print(f"TRADE REJECTED: {exc}", file=sys.stderr)
         return 1
     pf_mod.save(pf)
+    pf_mod.log_equity_snapshot(pf)
     print(f"OPENED {args.side} {pos.qty:+d} {pos.symbol} {pos.strike:g} "
           f"{pos.type} @ ${pos.entry_price:.2f}  (id {pos.id})")
     _print_report(pf)
@@ -87,6 +89,7 @@ def cmd_close(args) -> int:
         print(f"CLOSE REJECTED: {exc}", file=sys.stderr)
         return 1
     pf_mod.save(pf)
+    pf_mod.log_equity_snapshot(pf)
     print(f"CLOSED {args.id}  realized P&L ${realized:+,.2f}")
     _print_report(pf)
     return 0

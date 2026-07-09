@@ -35,6 +35,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 STATE_DIR = os.path.normpath(os.path.join(_HERE, "..", "state"))
 PORTFOLIO_PATH = os.path.join(STATE_DIR, "portfolio.json")
 TRADE_LOG_PATH = os.path.join(STATE_DIR, "trade_log.csv")
+EQUITY_LOG_PATH = os.path.join(STATE_DIR, "equity_log.csv")
 
 TRADE_LOG_FIELDS = [
     "timestamp",
@@ -48,7 +49,19 @@ TRADE_LOG_FIELDS = [
     "price",
     "cash_delta",
     "commission",
+    "realized_pnl",
     "note",
+]
+
+EQUITY_LOG_FIELDS = [
+    "timestamp",
+    "cash",
+    "positions_value",
+    "equity",
+    "buying_power",
+    "realized_pnl",
+    "total_return_pct",
+    "open_positions",
 ]
 
 
@@ -133,6 +146,26 @@ def _append_log(row: dict, path: str = TRADE_LOG_PATH) -> None:
         if not exists:
             writer.writeheader()
         writer.writerow({k: row.get(k, "") for k in TRADE_LOG_FIELDS})
+
+
+def log_equity_snapshot(pf: Portfolio, path: str = EQUITY_LOG_PATH) -> None:
+    """Append a point-in-time equity snapshot, for the dashboard's equity curve."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    exists = os.path.exists(path)
+    with open(path, "a", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=EQUITY_LOG_FIELDS)
+        if not exists:
+            writer.writeheader()
+        writer.writerow({
+            "timestamp": _now(),
+            "cash": round(pf.cash, 2),
+            "positions_value": round(pf.positions_value(), 2),
+            "equity": round(pf.equity(), 2),
+            "buying_power": round(pf.buying_power(), 2),
+            "realized_pnl": round(pf.realized_pnl, 2),
+            "total_return_pct": round(pf.total_return_pct(), 4),
+            "open_positions": len(pf.positions),
+        })
 
 
 # ── collateral / risk ────────────────────────────────────────────────────────
@@ -257,7 +290,7 @@ def close_position(
         "symbol": pos.symbol, "type": pos.type, "strike": pos.strike,
         "expiration": pos.expiration, "qty": -pos.qty, "price": price,
         "cash_delta": round(cash_delta, 2), "commission": commission,
-        "note": note or f"realized {realized:+.2f}",
+        "realized_pnl": round(realized, 2), "note": note,
     })
     return realized
 
@@ -286,7 +319,8 @@ def mark_to_market(pf: Portfolio) -> list[str]:
                 "symbol": pos.symbol, "type": pos.type, "strike": pos.strike,
                 "expiration": pos.expiration, "qty": -pos.qty, "price": settle,
                 "cash_delta": round(cash_delta, 2), "commission": 0,
-                "note": f"settled intrinsic {settle:.2f}, realized {realized:+.2f}",
+                "realized_pnl": round(realized, 2),
+                "note": f"settled at intrinsic value ${settle:.2f}",
             })
             notes.append(
                 f"{pos.symbol} {pos.strike:g} {pos.type} expired → "

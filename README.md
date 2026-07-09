@@ -10,8 +10,33 @@ positions.
 > Market data is public (via `yfinance`); fills are simulated at model/last
 > prices. Educational use only — not financial advice.
 
-> The original **Options Payoff Forecaster** (Streamlit app) lives on the
-> [`vibe`](../../tree/vibe) branch.
+> The original **Options Payoff Forecaster** (Streamlit app, `app.py`) is
+> preserved as-is on the [`vibe`](../../tree/vibe) branch.
+
+## Dashboard (`dashboard.py`)
+
+A **read-only** Streamlit dashboard — the only thing a user is meant to look at
+day to day. All trading happens in the background via the subagents; this view
+has no controls to place, edit, or cancel trades.
+
+```bash
+streamlit run dashboard.py
+```
+
+It shows:
+- **Top-line metrics** — total equity, cash, buying power, open-positions value,
+  realized P&L, total return %.
+- **Equity curve** — built from `state/equity_log.csv`, a snapshot appended on
+  every `mark` / `trade` / `close`.
+- **Open positions** — live marks and unrealized P&L per position.
+- **Pending orders** — always 0: this engine only supports market orders, which
+  fill immediately when the trading agent calls the CLI, so there's no resting
+  order queue.
+- **Closed orders** — realized P&L per trade plus win rate / avg win / avg loss,
+  sourced from `state/trade_log.csv`.
+- **Fund intelligence** — the latest `news_digest.md` and `econ_outlook.md`
+  produced by the reporter agents.
+- **Full trade log** — every open/close/expire event, unfiltered.
 
 ## The agent team (`.claude/agents/`)
 
@@ -38,7 +63,8 @@ simulator/
   run_cycle.py  # CLI: report | mark | trade | close | deposit
 state/
   portfolio.json   # the $5,000 account (committed state)
-  trade_log.csv    # append-only trade history
+  trade_log.csv    # append-only trade history (realized P&L per close/expire)
+  equity_log.csv   # equity snapshots over time, feeds the dashboard's chart
   news_digest.md   # produced by news_reporter
   econ_outlook.md  # produced by economics_reporter
 ```
@@ -109,6 +135,7 @@ Or drive the pieces manually: run the agents, then use the CLI above.
 ```bash
 pip install -r requirements.txt
 python -m simulator.run_cycle report   # confirms a fresh $5,000 account
+streamlit run dashboard.py             # view the fund dashboard
 ```
 
 ## Caveats
