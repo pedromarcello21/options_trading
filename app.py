@@ -155,18 +155,26 @@ st.divider()
 st.subheader(f"{symbol}  ·  ${strike:g} strike  ·  expires {expiration}  ·  {days} days out")
 
 # Summary table
+call_market = float(call_row.get("lastPrice", float("nan")))
+put_market = float(put_row.get("lastPrice", float("nan")))
+
 summary = pd.DataFrame(
     {
         "Black-Scholes price": [f"${call_price:.2f}", f"${put_price:.2f}"],
-        "Market last price": [
-            f"${float(call_row.get('lastPrice', float('nan'))):.2f}",
-            f"${float(put_row.get('lastPrice', float('nan'))):.2f}",
-        ],
+        "Market last price": [f"${call_market:.2f}", f"${put_market:.2f}"],
         "Implied volatility": [f"{call_iv:.1%}", f"{put_iv:.1%}"],
+        "Cost / contract (BS)": [f"${call_price * 100:,.2f}", f"${put_price * 100:,.2f}"],
+        "Cost / contract (Market)": [f"${call_market * 100:,.2f}", f"${put_market * 100:,.2f}"],
     },
     index=["Call", "Put"],
 )
 st.dataframe(summary, use_container_width=True)
+if contracts > 1:
+    st.caption(
+        f"For {contracts} contracts: call ≈ ${call_price * shares:,.2f} (BS) / "
+        f"${call_market * shares:,.2f} (market) · put ≈ ${put_price * shares:,.2f} (BS) / "
+        f"${put_market * shares:,.2f} (market)."
+    )
 
 # P/L table
 moves = [-0.30, -0.20, -0.10, 0.0, 0.10, 0.20, 0.30]
