@@ -1,0 +1,6 @@
+timestamp,action,id,symbol,type,strike,expiration,qty,price,cash_delta,commission,realized_pnl,note
+2026-07-10T11:00:24Z,open_buy,0c2c8985,AAPL,call,320.0,2026-08-21,1,10.3,-1030.65,0.65,,AI/Broadcom deal + JPM PT raise; earnings 7/30 (Cook's last call) convexity
+2026-07-10T11:01:35Z,open_buy,1ff8b407,NVDA,call,200.0,2026-08-21,1,12.91,-1291.65,0.65,,"Semis/AI leg; -18% off highs, Blackwell sold out, structurally bullish momentum"
+2026-07-10T11:01:46Z,close,1ff8b407,NVDA,call,200.0,2026-08-21,-1,12.91,1290.35,0.65,-0.65,Trim: 200 strike breached 20% single-position risk cap; reopening OTM
+2026-07-10T11:01:50Z,open_buy,cbccf9ae,NVDA,call,220.0,2026-08-21,1,4.99,-499.65,0.65,,"Semis/AI leg, OTM for defined size <20% cap; Blackwell sold out, structurally bullish"
+2026-07-10T11:02:01Z,open_buy,25fd6c2c,SPY,put,720.0,2026-08-21,1,5.08,-508.65,0.65,,Tail hedge into CPI 7/14 + FOMC 7/29; VIX ~17 complacent vs Iran/stagflation risk

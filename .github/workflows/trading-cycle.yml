@@ -1,0 +1,125 @@
+name: Trading Cycle
+
+# Self-sufficient options paper-trading cycle.
+#
+#   * The deterministic "mark to market" step ALWAYS runs — this is the
+#     heartbeat that keeps the portfolio valued and expiries settled. It needs
+#     no secrets.
+#   * The Claude agent pipeline (news -> economics -> trading) runs ONLY if an
+#     ANTHROPIC_API_KEY secret is configured. Without it, the workflow still
+#     succeeds and simply skips decision-making.
+#
+# Setup:
+#   1. Settings -> Secrets and variables -> Actions -> add ANTHROPIC_API_KEY.
+#   2. Settings -> Actions -> General -> Workflow permissions -> Read and write.
+
+on:
+  schedule:
+    # 14:00 UTC on weekdays ≈ 10:00 ET, shortly after the US market opens.
+    - cron: "0 14 * * 1-5"
+  workflow_dispatch: {}   # allow manual "Run workflow"
+
+# Prevent overlapping cycles from racing on the committed state files.
+concurrency:
+  group: trading-cycle
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (beta)
+        uses: actions/checkout@v4
+        with:
+          ref: beta
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── Deterministic heartbeat: always runs, no secrets needed ────────────
+      - name: Mark portfolio to market
+        run: python -m simulator.run_cycle mark
+
+      # ── Agent pipeline: only when an API key is available ──────────────────
+      - name: Check for Anthropic API key
+        id: haskey
+        run: |
+          if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "ANTHROPIC_API_KEY not set — skipping the Claude agent pipeline."
+          fi
+
+      - name: Set up Node (for Claude Code CLI)
+        if: steps.haskey.outputs.enabled == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Claude Code CLI
+        if: steps.haskey.outputs.enabled == 'true'
+        run: npm install -g @anthropic-ai/claude-code
+
+      # Each agent runs as its own pinned `claude -p --agent <name>` call rather
+      # than one call asking Claude to self-delegate — this guarantees the
+      # order (reporters, then trading) instead of leaving it to Claude's
+      # judgment within a single session. Coordination happens purely through
+      # the shared files each agent reads/writes (state/*.md, portfolio.json,
+      # state/memory/*.md), so no conversation needs to be threaded
+      # between the three calls. `|| true` lets a failed reporter degrade
+      # gracefully instead of blocking the rest of the cycle.
+      - name: Run news_reporter
+        if: steps.haskey.outputs.enabled == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude -p --agent news_reporter \
+            "Refresh state/news_digest.md for this trading cycle and update your memory." \
+            --permission-mode acceptEdits \
+            --allowedTools "Read,Grep,Glob,WebSearch,WebFetch,Write" \
+            || echo "news_reporter failed — continuing with a stale/missing digest."
+
+      - name: Run economics_reporter
+        if: steps.haskey.outputs.enabled == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude -p --agent economics_reporter \
+            "Refresh state/econ_outlook.md for this trading cycle and update your memory." \
+            --permission-mode acceptEdits \
+            --allowedTools "Read,Grep,Glob,WebSearch,WebFetch,Write" \
+            || echo "economics_reporter failed — continuing with a stale/missing outlook."
+
+      - name: Run trading agent
+        if: steps.haskey.outputs.enabled == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude -p --agent trading \
+            "Review the current book against state/news_digest.md and state/econ_outlook.md, \
+            execute any trades via 'python -m simulator.run_cycle' per your risk rules, and \
+            update your memory with today's desk note." \
+            --permission-mode acceptEdits \
+            --allowedTools "Read,Write,Edit,Grep,Glob,WebSearch,WebFetch,Bash(python -m simulator.run_cycle:*)"
+
+      # ── Persist the results ────────────────────────────────────────────────
+      - name: Commit updated state
+        run: |
+          git config user.name  "trading-bot"
+          git config user.email "trading-bot@users.noreply.github.com"
+          git add state/ || true
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+          else
+            git commit -m "Automated trading cycle $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push origin beta
+          fi
