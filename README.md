@@ -174,3 +174,7 @@ streamlit run dashboard.py             # view the fund dashboard
 - Black-Scholes assumes European exercise and constant volatility — prices are
   approximations.
 - The CI Claude step consumes API credits.
+
+##Check out my portfolio progress here!
+
+- https://optionstrading-beta.streamlit.app/
