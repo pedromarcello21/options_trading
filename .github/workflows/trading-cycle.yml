@@ -74,7 +74,7 @@ jobs:
       # order (reporters, then trading) instead of leaving it to Claude's
       # judgment within a single session. Coordination happens purely through
       # the shared files each agent reads/writes (state/*.md, portfolio.json,
-      # .claude/agents/memory/*.md), so no conversation needs to be threaded
+      # state/memory/*.md), so no conversation needs to be threaded
       # between the three calls. `|| true` lets a failed reporter degrade
       # gracefully instead of blocking the rest of the cycle.
       - name: Run news_reporter
@@ -116,7 +116,7 @@ jobs:
         run: |
           git config user.name  "trading-bot"
           git config user.email "trading-bot@users.noreply.github.com"
-          git add state/ .claude/agents/memory/ || true
+          git add state/ || true
           if git diff --cached --quiet; then
             echo "No state changes to commit."
           else

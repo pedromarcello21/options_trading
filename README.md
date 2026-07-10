@@ -48,7 +48,7 @@ It shows:
 
 The reporters have **no Bash/Edit** tools, so they can never run the trade engine
 or touch the portfolio — only the `trading` agent can. Each agent keeps a memory
-file in `.claude/agents/memory/` so it persists across sessions.
+file in `state/memory/` so it persists across sessions.
 
 ## The engine (`simulator/`)
 
@@ -121,14 +121,27 @@ Without the key, the deterministic heartbeat still runs every cycle.
 
 ## Running a full cycle locally
 
-With Claude Code installed, from the repo root:
+With Claude Code installed, from the repo root, run each agent as its own
+pinned call — this guarantees the order (reporters before trading) instead of
+leaving delegation to Claude's judgment within one session:
 
-```
-claude -p "Run one trading cycle: news_reporter, then economics_reporter, then
-the trading agent. Each updates its own memory."
+```bash
+claude -p --agent news_reporter \
+  "Refresh state/news_digest.md for this trading cycle and update your memory." \
+  --permission-mode acceptEdits --allowedTools "Read,Grep,Glob,WebSearch,WebFetch,Write"
+
+claude -p --agent economics_reporter \
+  "Refresh state/econ_outlook.md for this trading cycle and update your memory." \
+  --permission-mode acceptEdits --allowedTools "Read,Grep,Glob,WebSearch,WebFetch,Write"
+
+claude -p --agent trading \
+  "Review the book against the digests, execute trades via 'python -m simulator.run_cycle', update your memory." \
+  --permission-mode acceptEdits --allowedTools "Read,Write,Edit,Grep,Glob,WebSearch,WebFetch,Bash(python -m simulator.run_cycle:*)"
 ```
 
-Or drive the pieces manually: run the agents, then use the CLI above.
+Run locally (in your own terminal, or from an interactive Claude Code session
+via Bash) this needs no `ANTHROPIC_API_KEY` — it rides on your existing Claude
+Code login. Or drive the pieces manually: run the agents, then use the CLI above.
 
 ## Setup
 

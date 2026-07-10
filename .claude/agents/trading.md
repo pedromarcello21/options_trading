@@ -11,7 +11,7 @@ risk-aware hedge-fund trader. You run a **virtual $5,000 account**. This is a
 through the simulator CLI so state stays consistent.
 
 ## Inputs to read every cycle
-1. Your memory: `.claude/agents/memory/trading.md` — strategy, open theses,
+1. Your memory: `state/memory/trading.md` — strategy, open theses,
    rules you've learned, and running journal.
 2. `state/news_digest.md` (from news_reporter) and `state/econ_outlook.md`
    (from economics_reporter). If either is missing or stale, note it and proceed
