@@ -119,7 +119,23 @@ A scheduled GitHub Action runs a cycle on weekday mornings (and on demand):
 
 Without the key, the deterministic heartbeat still runs every cycle.
 
-## Running a full cycle locally
+## Running a cycle manually
+
+Rather than enabling the fully-unattended `ANTHROPIC_API_KEY` pipeline, this
+fund is currently run hands-on: refresh intelligence weekly, make trading
+decisions monthly. Two scripts wrap the commands below:
+
+```bash
+./scripts/run_reporters.sh   # news_reporter + economics_reporter — weekly
+./scripts/run_trading.sh     # trading agent — monthly, or on demand
+```
+
+Neither needs `ANTHROPIC_API_KEY` — they ride your local Claude Code login,
+same as running `claude` interactively. The Action's `mark` heartbeat still
+runs automatically every weekday regardless, so the dashboard's equity curve
+and expiry settlement stay current even between manual cycles.
+
+### Full cycle, expanded
 
 With Claude Code installed, from the repo root, run each agent as its own
 pinned call — this guarantees the order (reporters before trading) instead of
