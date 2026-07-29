@@ -3,7 +3,7 @@
   "initial_capital": 5000.0,
   "realized_pnl": -0.65,
   "created_at": "2026-07-09T00:00:00Z",
-  "updated_at": "2026-07-28T16:08:25Z",
+  "updated_at": "2026-07-29T15:53:55Z",
   "positions": [
     {
       "id": "0c2c8985",
@@ -14,8 +14,8 @@
       "qty": 1,
       "entry_price": 10.3,
       "opened_at": "2026-07-10T11:00:24Z",
-      "iv": 0.3391179370117187,
-      "last_mark": 23.99,
+      "iv": 0.3341741387939453,
+      "last_mark": 24.32,
       "collateral": 0.0
     },
     {
@@ -27,8 +27,8 @@
       "qty": 1,
       "entry_price": 4.99,
       "opened_at": "2026-07-10T11:01:50Z",
-      "iv": 0.385626260986328,
-      "last_mark": 1.56,
+      "iv": 0.40405869384765625,
+      "last_mark": 0.9,
       "collateral": 0.0
     },
     {
@@ -40,8 +40,8 @@
       "qty": 1,
       "entry_price": 5.08,
       "opened_at": "2026-07-10T11:02:01Z",
-      "iv": 0.1676413803100586,
-      "last_mark": 4.81,
+      "iv": 0.17041845214843754,
+      "last_mark": 6.9,
       "collateral": 0.0
     }
   ]
